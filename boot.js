@@ -1,8 +1,12 @@
+require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 
 const { Collection, REST, Routes } = require("discord.js");
-const { clientId, token } = require("./config.json");
+const token = process.env.DISCORD_TOKEN;
+const clientId = process.env.DISCORD_CLIENT_ID;
+
+const { testConnection } = require("./db/db.js");
 
 function boot(client) {
     client.commands = new Collection();
@@ -24,18 +28,20 @@ function boot(client) {
     (async () => {
         try {
             const commandsArray = client.commands.map(cmd => cmd.data.toJSON());
-            console.log(`Started refreshing ${commandsArray.length} application (/) commands.`);
+            console.log(`[BOOT] Started refreshing ${commandsArray.length} application (/) commands.`);
 
             const data = await rest.put(
                 Routes.applicationCommands(clientId),
                 { body: commandsArray },
             );
 
-            console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+            console.log(`[BOOT] Successfully reloaded ${data.length} application (/) commands.`);
         } catch (error) {
             console.error(error);
         }
     })();
+
+    testConnection();
 }
 
 
