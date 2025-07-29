@@ -1,9 +1,9 @@
 require("dotenv").config();
-const { Client, Events, GatewayIntentBits } = require("discord.js");
+const { Client, Events, GatewayIntentBits, MessageFlags } = require("discord.js");
 const token = process.env.DISCORD_TOKEN;
 const boot = require("./boot.js");
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds]});
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]});
 boot.boot(client);
 
 client.once(Events.ClientReady, readyClient => {
@@ -32,3 +32,5 @@ client.on(Events.InteractionCreate, async interaction => {
 		}
     }
 })
+
+module.exports = {client};

@@ -34,6 +34,17 @@ async function checkTableCount() {
     console.log("[DB] Number of tables found in database:", tablesCountQuery.rows[0].table_count);
 }
 
+async function customQuery() {
+    const q = await runQuery(`
+        CREATE TABLE approvers (
+            guild_id VARCHAR(20),
+            user_id VARCHAR(20),
+            added_by VARCHAR(20),
+            PRIMARY KEY (guild_id, user_id)
+        );
+    `)
+}
+
 module.exports = {
     pool, runQuery, testConnection
 }
