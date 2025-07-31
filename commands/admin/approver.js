@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
 const { pool, runQuery } = require("../../db/db.js");
-const { client } = require("../../main.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -83,7 +82,7 @@ module.exports = {
             } catch(err) {
                 console.error("[WARN] Error in adding approver:", err);
                 await interaction.reply({
-                    content: `Failed to grant approval powers to ${user.username}`,
+                    content: `Failed to grant approval powers. Try again later.`,
                     flags: MessageFlags.Ephemeral
                 })
             }
@@ -130,7 +129,7 @@ module.exports = {
                 const guild = interaction.guild;
                 const admins = guild.members.cache.filter((member) => member.permissions.has(PermissionFlagsBits.Administrator) && !member.user.bot)
                 const listApprovers = new EmbedBuilder()
-                    .setColor(0x0099FF)
+                    .setColor(0x2596BE)
                     .setDescription("-# Note: recently added admins might take some time to show up on this list.")
                     .setAuthor({ name: `Prompt Approvers for ${guild.name}` });
 
@@ -138,44 +137,57 @@ module.exports = {
                 for(const admin of admins) {
                     adminValue += `${admin[1].user.username}\n`
                 }
-                let usersValue = ""
-                let addedByValue = ""
-                const { rows }= await runQuery(
+                const { rows } = await runQuery(
                     "SELECT user_id, added_by FROM approvers WHERE guild_id = $1",
                     [guild.id]
                 );
-                Promise.all(
-                    rows.flatMap(row => [
-                        interaction.client.users.fetch(row.user_id)
-                            .then(user => usersValue += `${user.username}\n`)
-                            .catch(() => usersValue += '[Unknown User]\n'),
-                        interaction.client.users.fetch(row.added_by)
-                            .then(user => addedByValue += `${user.username}\n`)
-                            .catch(() => addedByValue += '[Unknown Admin]\n')
-                    ])
-                ).then(() => {
-                    const fields = [
-                        {
-                            name: "Administrators",
-                            value: adminValue
-                        },
-                        {
-                            name: "Users",
-                            value: usersValue || "None",
-                            inline: true
-                        },
-                        {
-                            name: "Added By",
-                            value: addedByValue || "-",
-                            inline: true
+                const userPromises = rows.map(async(row) => {
+                    const user = await interaction.client.users.fetch(row.user_id);
+                    const isMember = await checkUserInGuild(guild, user);
+
+                    if(isMember) {
+                        const addedBy = await interaction.client.users.fetch(row.added_by);
+                        return {
+                            username: user.username,
+                            addedByUsername: addedBy.username
                         }
-                    ]
-                    
-                    listApprovers.addFields(fields);
-                    interaction.reply({
-                        embeds: [listApprovers]
-                    });
+                    } else {
+                        return null;
+                    }
                 })
+
+                const userPromisesResults = await Promise.all(userPromises);
+                let usersValue = ""
+                let addedByValue = ""
+
+                for (const res of userPromisesResults) {
+                    if(res) {
+                        usersValue += `${res.username}\n`;
+                        addedByValue += `${res.addedByUsername}\n`;
+                    }
+                }
+                const fields = [
+                    {
+                        name: "Administrators",
+                        value: adminValue
+                    },
+                    {
+                        name: "Users",
+                        value: usersValue || "None",
+                        inline: true
+                    },
+                    {
+                        name: "Added By",
+                        value: addedByValue || "-",
+                        inline: true
+                    }
+                ]
+                
+                listApprovers.addFields(fields);
+                interaction.reply({
+                    embeds: [listApprovers]
+                });
+                
             } catch(err) {
                 console.error("[WARN] Error in listing approvers:", err);
                 await interaction.reply({
@@ -187,3 +199,15 @@ module.exports = {
     }
 }
 
+async function checkUserInGuild(guild, user) {
+    const isMember = await guild.members.fetch(user.id).then(() => true).catch(() => false);
+        
+    if(!isMember) {
+        await runQuery(
+            "DELETE FROM approvers WHERE guild_id = $1 AND user_id = $2",
+            [guild.id, user.id]
+        );
+        return false;
+    }
+    return true;
+}

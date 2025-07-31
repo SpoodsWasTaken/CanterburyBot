@@ -28,10 +28,11 @@ module.exports = {
         if(interaction.options.getSubcommand() === "new") {
             try {
                 const promptText = interaction.options.getString("text");
+                const guild = interaction.guild;
                 const channel = interaction.options.getChannel("channel") || interaction.channel;
                 const author = interaction.user;
 
-                const newPrompt = new QuestionPrompt(promptText, channel.id, author.id);
+                const newPrompt = new QuestionPrompt(promptText, guild.id, channel.id, author.id);
                 const mountedId = await newPrompt.mount(pool);
 
                 let response = `New prompt created: ${mountedId}`;

@@ -1,12 +1,12 @@
 class QuestionPrompt {
-    constructor(_query, _channel, _author) {
+    constructor(_query, _guild, _channel, _author) {
         this.id = this.generateRandomId();
         this.query = _query;
+        this.guild = _guild;
         this.channel = _channel;
+        this.deck = null;
         this.author = _author;
-        this.approved = false;
         this.approvedBy = null;
-        this.useCount = 0;
     }
 
     generateRandomId() {
@@ -28,21 +28,21 @@ class QuestionPrompt {
                 INSERT INTO prompts (
                     id,
                     text,
+                    guild_id,
                     channel_id,
+                    deck_id,
                     author_id,
-                    approved,
-                    approved_by,
-                    use_count
+                    approved_by
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING id`,
-                [this.id, this.query, this.channel, this.author, this.approved, this.approvedBy, this.useCount]
-                );
+                [this.id, this.query, this.guild, this.channel, this.deck, this.author, this.approvedBy]
+            );
             if(!result.rows[0].id) {
                 throw new Error("Failed to verify database insertion");
             }
             return result.rows[0].id;
         } catch(err) {
-            // UNique constraint violation special case (ID:23505)
+            // Unique constraint violation special case (ID:23505)
             if(err.code === "23505") {
                 this.id = this.generateRandomId();
                 return this.mount(db);
