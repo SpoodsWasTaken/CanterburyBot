@@ -1,11 +1,13 @@
-const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits, StringSelectMenuBuilder, ActionRowBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits, StringSelectMenuBuilder, ActionRowBuilder, ThreadAutoArchiveDuration,
+    ChannelType, EmbedBuilder
+ } = require("discord.js");
 const { pool, runQuery } = require("../../db/db.js");
+const { promptMenus } = require("../../handlers/suggestions.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("suggestions")
         .setDescription("Suggestion commands.")
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addSubcommand(subcommand =>
             subcommand
                 .setName("approve")
@@ -26,6 +28,7 @@ module.exports = {
                     });
                 }
                 sendList(interaction, guild, count);
+                console.log(`[QOTD] ${user.username} is approving prompts in ${guild.name}`)
 
             } catch(err) {
                 console.log("[WARN]", err);
@@ -33,9 +36,15 @@ module.exports = {
         }
     }
 }
-
 async function sendList(interaction, guild) {
     try {
+        if(promptMenus.has(guild.id)) {
+            return interaction.reply({
+                content: `Someone else in this server is currently approving prompts. Try again later.`,
+                flags: MessageFlags.Ephemeral
+            })
+        }
+        promptMenus.set(guild.id, null);
         const prompts = await runQuery(`
             SELECT channel_id, COUNT(*) as count
             FROM prompts
@@ -70,11 +79,26 @@ async function sendList(interaction, guild) {
             .setPlaceholder("Choose a channel")
             .addOptions(options);
         const row = new ActionRowBuilder().addComponents(selectMenu);
-        await interaction.reply({
+
+        const thread = await interaction.channel.threads.create({
+            name: `QOTD Prompts Approval`,
+            autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+            type: ChannelType.PrivateThread,
+            reason: "Approve QOTD prompts for this channel. Expires in one hour."
+        });
+        await thread.members.add(interaction.user.id);
+        const newThreadCard = new EmbedBuilder()
+            .setColor(0x2596BE)
+            .setTitle("Private thread created!")
+            .setDescription(`Check it out here: ${thread}`)
+        await thread.send({
             content: "Select a channel from the list:",
             components: [row],
-            flags: MessageFlags.Ephemeral
         });
+        await interaction.reply({
+            embeds: [newThreadCard],
+            flags: MessageFlags.Ephemeral
+        })
     } catch(err) {
         console.log("[WARN]", err);
     }

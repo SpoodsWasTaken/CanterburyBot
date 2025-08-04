@@ -75,6 +75,7 @@ module.exports = {
                     "INSERT INTO approvers (guild_id, user_id, added_by) VALUES ($1, $2, $3)",
                     [guild.id, user.id, approvedBy.id]
                 );
+                console.log(`[APPR] ${user.username} was added as an approver in ${guild.name} by ${approvedBy.name}`)
                 await interaction.reply({
                     content: `Successfully granted approval powers to ${user.username}`,
                     flags: MessageFlags.Ephemeral
@@ -112,6 +113,7 @@ module.exports = {
                     "DELETE FROM approvers WHERE guild_id = $1 AND user_id = $2",
                     [guild.id, user.id]
                 );
+                console.log(`[APPR] ${user.username} was removed as an approver in ${guild.name} by ${approvedBy.name}`)
                 await interaction.reply({
                     content: `Successfully revoked approval powers from ${user.username}`,
                     flags: MessageFlags.Ephemeral
@@ -158,12 +160,10 @@ module.exports = {
 
                 const userPromisesResults = await Promise.all(userPromises);
                 let usersValue = ""
-                let addedByValue = ""
 
                 for (const res of userPromisesResults) {
                     if(res) {
-                        usersValue += `${res.username}\n`;
-                        addedByValue += `${res.addedByUsername}\n`;
+                        usersValue += `${res.username}\n` + `-# Added by ${res.addedByUsername}\n`;
                     }
                 }
                 const fields = [
@@ -173,17 +173,12 @@ module.exports = {
                     },
                     {
                         name: "Users",
-                        value: usersValue || "None",
-                        inline: true
-                    },
-                    {
-                        name: "Added By",
-                        value: addedByValue || "-",
-                        inline: true
+                        value: `${usersValue}` || "None",
                     }
                 ]
                 
                 listApprovers.addFields(fields);
+                console.log(`[APPR] ${interaction.user.username} listed approvers in ${guild.name}`)
                 interaction.reply({
                     embeds: [listApprovers]
                 });

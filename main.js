@@ -2,7 +2,8 @@ require("dotenv").config();
 const { Client, Events, GatewayIntentBits, MessageFlags } = require("discord.js");
 const token = process.env.DISCORD_TOKEN;
 const boot = require("./boot.js");
-const { handleStringSelectMenu } = require("./handlers/stringSelect.js");
+const { handleStringSelectMenu } = require("./handlers/ui/stringSelect.js");
+const { handleButton } = require("./handlers/ui/button.js");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]});
 boot.boot(client);
@@ -13,7 +14,9 @@ client.login(token);
 
 client.on(Events.InteractionCreate, async interaction => {
     if(interaction.isChatInputCommand()) { handleChatInputCommand(interaction) }
-    if(interaction.isStringSelectMenu()) { handleStringSelectMenu(interaction) }
+    else if(interaction.isStringSelectMenu()) { handleStringSelectMenu(interaction) }
+    else if(interaction.isButton()) { handleButton(interaction) }
+
 })
 
 async function handleChatInputCommand(interaction) {

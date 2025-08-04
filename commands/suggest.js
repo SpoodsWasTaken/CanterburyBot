@@ -36,6 +36,7 @@ module.exports = {
                 const mountedId = await newPrompt.mount(pool);
 
                 let response = `New prompt created: ${mountedId}`;
+                console.log(`[QOTD] ${interaction.user.username} suggested "${promptText}" in ${channel.name} - ${guild.name}: ID assigned ${mountedId}`)
 
                 await interaction.reply({
                     content: response,
