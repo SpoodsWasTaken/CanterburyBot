@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, ChannelType, MessageFlags, PermissionFlagsBits } = require("discord.js");
-const { createDeck, getDecksWithInfo } = require("../../resources/Deck.js");
+const { SlashCommandBuilder, ChannelType, MessageFlags, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
+const { createDeck, getDecks } = require("../../resources/Deck.js");
 const { pool } = require("../../db/db.js");
 
 module.exports = {
@@ -41,17 +41,33 @@ module.exports = {
                 .addStringOption(option =>
                     option
                         .setName("description")
-                        .setDescription("Set description/instructions that appear at the bottom of the prompt card.")
+                        .setDescription("Description/instructions that appear at the bottom of the prompt card.")
+                )
+                .addStringOption(option =>
+                    option
+                        .setName("colour")
+                        .setDescription("Hexcode of the card's accent colour. E.g. #ED1D24")
+                        .setMaxLength(7)
                 )
         )
         .addSubcommand(subcommand => 
             subcommand
                 .setName("list")
-                .setDescription("List decks in this server.")
+                .setDescription("List decks linked to a channel.")
                 .addChannelOption(option =>
                     option
                         .setName("channel")
-                        .setDescription("Only show decks linked to this channel.")
+                        .setDescription("Show decks linked to this channel. Defaults to current channel.")
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName("edit")
+                .setDescription("Edit decks in this channel.")
+                .addChannelOption(option =>
+                    option
+                        .setName("channel")
+                        .setDescription("Edit a deck linked to this channel. Defaults to current channel.")
                 )
         ),
     async execute(interaction) {
@@ -69,8 +85,17 @@ module.exports = {
                 const priority = interaction.options.getNumber("priority");
                 const title = interaction.options.getString("title");
                 const description = interaction.options.getString("description");
+                const colourRaw = interaction.options.getString("colour") || "2596BE";
+                const colour = validateColour(colourRaw);
 
-                const mountedName = await createDeck(pool, guild.id, channel.id, name, priority, title, description);
+                if(!colour) {
+                    return interaction.reply({
+                        content: `Invalid hexcode specified. Please try again.`,
+                        flags: MessageFlags.Ephemeral
+                    })
+                }
+
+                const mountedName = await createDeck(pool, guild.id, channel.id, name, priority, title, description, colour);
                 const response = `New deck created: ${mountedName}`;
 
                 await interaction.reply({
@@ -85,11 +110,53 @@ module.exports = {
                 })
             }
         }
-        if(interaction.options.getSubcommand() === "list") {
-            const guild = interaction.guild;
-            const channel = interaction.options.getChannel("channel");
+        else if(interaction.options.getSubcommand() === "list") {
+            try {
+                const channel = interaction.options.getChannel("channel") || interaction.channel;
 
-            const results = await getDecksWithInfo(guild, channel);
+                const results = await getDecks(pool, channel);
+                if(results.length == 0) {
+                    return interaction.reply({
+                        content: `The specified channel has no linked decks.`,
+                        flags: MessageFlags.Ephemeral
+                    })
+                } else {
+                    const embeds = [];
+                    for(const row of results) {
+                        let desc = "Your prompt text goes here."
+                        if(row.desc) { desc = desc + `\n\n*${row.desc}*`}
+                        const deckInfoCard = new EmbedBuilder()
+                            .setColor(row.colour)
+                            .setTitle(row.title)
+                            .setDescription(desc)
+                            .setFooter({text: `Deck: ${row.name} | Priority Level: ${row.priority} | ${row.approved} Cards in Deck | ${row.unapproved} Suggestions in Channel`})
+                        embeds.push(deckInfoCard);
+                    }
+                    return interaction.reply({
+                        content: "Here's what the prompts of each deck will look like!",
+                        embeds: embeds,
+                        flags: MessageFlags.Ephemeral
+                    })
+                }
+            } catch(err) {
+                console.log("[WARN]", err);
+            }
+        }
+        else if(interaction.options.getSubcommand() === "edit") {
+            try {
+
+            } catch(err) {
+                console.log("[WARN]", err);
+            }
         }
     }
+}
+function validateColour(col) {
+    const cleanStr = str => str.startsWith('#') ? str : `#${str}`;
+    const cleanHex = cleanStr(col);
+
+    const isValid = /^#([0-9A-F]{3}){1,2}$/i.test(cleanHex);
+
+    if(!isValid) return;
+    return cleanHex;
 }

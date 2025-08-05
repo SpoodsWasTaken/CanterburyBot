@@ -14,7 +14,7 @@ async function sendQotd(client, channel) {
             SELECT 
                 p.id, p.text, p.author_id as author, 
                 p.deck_id, d.name as deck_name,
-                d.title, d.description as desc
+                d.title, d.description as desc, d.colour as colour
             FROM prompts p
             JOIN decks d ON p.deck_id = d.id
             WHERE p.deck_id = (SELECT id FROM target_deck)
@@ -37,6 +37,7 @@ async function sendQotd(client, channel) {
         const authorName = author.username;
         const deckName = info.rows[0].deck_name;
         const title = info.rows[0].title;
+        const colour = info.rows[0].colour;
         const approved = approveData.rows[0].approved_count;
         const unapproved = approveData.rows[0].unapproved_count;
 
@@ -45,6 +46,7 @@ async function sendQotd(client, channel) {
             promptText = promptText + `\n\n*${info.rows[0].desc}*`
         }
         const promptCard = new EmbedBuilder()
+            .setColor(colour)
             .setTitle(title)
             .setDescription(promptText)
             .setFooter({

@@ -12,7 +12,7 @@ async function handleApprovalDropdown(interaction) {
 
         const [decksResult, promptsResult] = await Promise.all([
             runQuery(
-            "SELECT id, name FROM decks WHERE channel_id = $1",
+            "SELECT id, name, priority FROM decks WHERE channel_id = $1",
             [selectedChannelId]),
             runQuery(`
             SELECT id, text, author_id
@@ -41,12 +41,31 @@ async function handleApprovalDropdown(interaction) {
         );
         const menu = new PromptMenu(interaction, decksResult.rows, promptsResult.rows, authors);
         promptMenus.set(interaction.guild.id, menu);
+
+        const exitBtn = new ButtonBuilder()
+            .setCustomId("approve exit")
+            .setLabel("Finish")
+            .setStyle(ButtonStyle.Success)
+        const exitRow = new ActionRowBuilder().addComponents(exitBtn)
+        await interaction.message.edit({
+            content: "Done early?",
+            components: [exitRow]
+        })
     } catch(err) {
         console.log("[WARN]", err);
         await interaction.reply({
             content: `Unable to generate list. Try again later.`,
             flags: MessageFlags.Ephemeral
         })
+    }
+}
+async function handleExitApproval(interaction) {
+    try {
+        const menu = promptMenus.get(interaction.guild.id);
+        menu.closeMenu(interaction.message);
+        await interaction.deferUpdate();
+    } catch(err) {
+        console.log("[WARN]", err);
     }
 }
 async function handleApprovalButton(interaction) {
@@ -68,13 +87,14 @@ async function handleApprovalButton(interaction) {
             `, [deck, approver, prompt])
             console.log(`[QOTD] Prompt ${prompt} was approved in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.name}`)
         }
-        else {
+        else if(type === "-") {
             await runQuery(`
                 DELETE FROM prompts
                 WHERE id = $1
             `, [prompt])
             console.log(`[QOTD] Prompt ${prompt} was denied in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.name}`)
         }
+
         menu.deckSelected(msg);
         await interaction.deferUpdate();
 
@@ -120,9 +140,10 @@ class PromptMenu {
         this.messages = [];
 
         if(this.decks.length > 1) {
-            const options = this.decks.map(({ id, name }) => {
+            const options = this.decks.map(({ id, name, priority }) => {
                 return {
                     label: `${name}`,
+                    description: `Priority: ${priority.toString()}`,
                     value: id.toString()
                 }
             }) 
@@ -183,9 +204,7 @@ class PromptMenu {
                 this.messages.splice(i, 1);
 
                 if(this.messages.length == 0 && x.channel.isThread()) {
-                    setTimeout(async () => { x.channel.delete() }, 3000);
-                    promptMenus.delete(this.interaction.guild.id)
-                    console.log(`[QOTD] ${user.username} has finished approving prompts in ${guild.name}`)
+                    setTimeout(async () => { this.closeMenu(x) }, 3000);
                 }
                 
             } else {
@@ -201,6 +220,11 @@ class PromptMenu {
         }
         
     }
+    closeMenu(msg) {
+        msg.channel.delete();
+        promptMenus.delete(this.interaction.guild.id)
+        console.log(`[QOTD] ${this.interaction.user.username} has finished approving prompts in ${this.interaction.guild.name}`)
+    }
     generatePromptApprovalCard(prompt, i, authorName) {
         const promptCard = new EmbedBuilder()
             .setColor(0x2596BE)
@@ -215,13 +239,17 @@ class PromptMenu {
             .setCustomId("approve - " + prompt.id)
             .setLabel("Deny")
             .setStyle(ButtonStyle.Danger)
+        const skipBtn = new ButtonBuilder()
+            .setCustomId("approve 0 " + prompt.id)
+            .setLabel("Skip")
+            .setStyle(ButtonStyle.Secondary)
         const components = []
         const row = new ActionRowBuilder()
         if(this.decks.length > 1) {
             components.push(this.approveMenu);
-            row.addComponents(denyBtn);
+            row.addComponents([denyBtn, skipBtn]);
         } else {
-            row.addComponents([approveBtn, denyBtn]);
+            row.addComponents([approveBtn, denyBtn, skipBtn]);
         }
         components.push(row)
         const msg = {
@@ -233,4 +261,4 @@ class PromptMenu {
     }
 }
 
-module.exports = { promptMenus, handleApprovalDropdown, handleApprovalButton, handleApprovalDeck }
+module.exports = { promptMenus, handleApprovalDropdown, handleExitApproval, handleApprovalButton, handleApprovalDeck }
