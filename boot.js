@@ -1,12 +1,14 @@
 require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
+const cron = require("node-cron");
 
 const { Collection, REST, Routes } = require("discord.js");
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
 
-const { testConnection } = require("./db/db.js");
+const { runQuery, testConnection } = require("./db/db.js");
+const { activeQotdJobs, sendQotd } = require("./handlers/qotdPost.js");
 
 function boot(client) {
     client.commands = new Collection();
@@ -43,7 +45,25 @@ function boot(client) {
 
     testConnection();
 }
+async function scheduleJobs(client) {
+    try {
+        const res = await runQuery(`SELECT id, cron_expression as cronex, utc_offset as crontz FROM channels`);
 
+        for(const row of res.rows) {
+            const channel = await client.channels.fetch(row.id);
+            const job = cron.schedule(row.cronex, async() => {
+                sendQotd(client, channel);
+            }, {
+                timezone: row.crontz,
+                scheduled: true
+            })
+            activeQotdJobs.set(channel.id, job);
+            console.log(`[QOTD] Scheduled job for #${channel.name} for ${row.cronex} (UTC ${row.crontz}[+/- flipped])`)
+        }
+    } catch(err) {
+        console.log("[WARN]", err);
+    }
+}
 
 // Helper function to recursively get all .js files in dir
 function getJsFiles(dir) {
@@ -62,4 +82,4 @@ function getJsFiles(dir) {
     return jsFiles;
 }
 
-module.exports = { boot }
+module.exports = { boot, scheduleJobs }

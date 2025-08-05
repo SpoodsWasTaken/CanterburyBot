@@ -32,6 +32,17 @@ module.exports = {
                         .setMinValue(0)
                         .setMaxValue(5)
                 )
+                .addStringOption(option => 
+                    option
+                        .setName("title")
+                        .setDescription("Title of prompt card.")
+                        .setMaxLength(100)
+                )
+                .addStringOption(option =>
+                    option
+                        .setName("description")
+                        .setDescription("Set description/instructions that appear at the bottom of the prompt card.")
+                )
         )
         .addSubcommand(subcommand => 
             subcommand
@@ -56,9 +67,10 @@ module.exports = {
                 const channel = interaction.options.getChannel("channel");
                 const name = interaction.options.getString("name");
                 const priority = interaction.options.getNumber("priority");
+                const title = interaction.options.getString("title");
+                const description = interaction.options.getString("description");
 
-                const mountedName = await createDeck(pool, guild.id, channel.id, name, priority);
-                console.log(mountedName)
+                const mountedName = await createDeck(pool, guild.id, channel.id, name, priority, title, description);
                 const response = `New deck created: ${mountedName}`;
 
                 await interaction.reply({

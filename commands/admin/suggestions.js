@@ -28,7 +28,6 @@ module.exports = {
                     });
                 }
                 sendList(interaction, guild, count);
-                console.log(`[QOTD] ${user.username} is approving prompts in ${guild.name}`)
 
             } catch(err) {
                 console.log("[WARN]", err);
@@ -44,6 +43,7 @@ async function sendList(interaction, guild) {
                 flags: MessageFlags.Ephemeral
             })
         }
+        console.log(`[QOTD] ${interaction.user.username} is approving prompts in ${guild.name}`)
         promptMenus.set(guild.id, null);
         const prompts = await runQuery(`
             SELECT channel_id, COUNT(*) as count

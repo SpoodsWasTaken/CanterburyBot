@@ -44,16 +44,16 @@ module.exports = {
             const cronTz = `Etc/GMT${parseInt(timezone) > 0 ? "-" : "+"}${Math.abs(parseInt(timezone))}`;
 
             await runQuery(`
-                INSERT INTO qotd_schedule (
-                    channel_id,
+                INSERT INTO channels (
+                    id,
                     cron_expression,
                     utc_offset,
-                    created_by
+                    suggestion_limit
                 ) VALUES ($1, $2, $3, $4)
-            `, [channel.id, cronEx, cronTz, interaction.user.id]);
+            `, [channel.id, cronEx, cronTz, 50]);
 
             const job = cron.schedule(cronEx, async() => {
-                sendQotd(channel);
+                sendQotd(interaction.client, channel);
             }, {
                 timezone: cronTz,
                 scheduled: true

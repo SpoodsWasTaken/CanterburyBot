@@ -66,14 +66,14 @@ async function handleApprovalButton(interaction) {
                     approved_by = $2
                 WHERE id = $3
             `, [deck, approver, prompt])
-            console.log(`[QOTD] Prompt ${prompt} was approved in ${channel.name} - ${guild.name} by ${interaction.user.id}`)
+            console.log(`[QOTD] Prompt ${prompt} was approved in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.name}`)
         }
         else {
             await runQuery(`
                 DELETE FROM prompts
                 WHERE id = $1
             `, [prompt])
-            console.log(`[QOTD] Prompt ${prompt} was denied in ${channel.name} - ${guild.name} by ${interaction.user.id}`)
+            console.log(`[QOTD] Prompt ${prompt} was denied in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.name}`)
         }
         menu.deckSelected(msg);
         await interaction.deferUpdate();
@@ -97,7 +97,7 @@ async function handleApprovalDeck(interaction) {
                 approved_by = $2
             WHERE id = $3
         `, [deck, approver, prompt])
-        console.log(`[QOTD] Prompt ${prompt} was approved in ${channel.name} - ${guild.name} by ${interaction.user.id}`)
+        console.log(`[QOTD] Prompt ${prompt} was approved in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.name}`)
 
         menu.deckSelected(msg)
         await interaction.deferUpdate();
@@ -140,7 +140,7 @@ class PromptMenu {
             for(let i = this.index; i < 5; i++) {
                 if(!this.prompts[i]) { break; }
                 const authorName = this.authors.get(this.prompts[i].author_id);
-                const promptMessage = this.generatePromptCard(this.prompts[i], this.index, authorName);
+                const promptMessage = this.generatePromptApprovalCard(this.prompts[i], this.index, authorName);
                 
                 if(this.interaction.replied || this.interaction.deferred) {
                     this.followUpQueue.push(promptMessage);
@@ -191,7 +191,7 @@ class PromptMenu {
             } else {
                 const prompt = this.prompts[this.index];
                 const authorName = this.authors.get(prompt.author_id);
-                const promptMessage = this.generatePromptCard(prompt, this.index, authorName);
+                const promptMessage = this.generatePromptApprovalCard(prompt, this.index, authorName);
 
                 this.index++;
                 x.edit(promptMessage);
@@ -201,7 +201,7 @@ class PromptMenu {
         }
         
     }
-    generatePromptCard(prompt, i, authorName) {
+    generatePromptApprovalCard(prompt, i, authorName) {
         const promptCard = new EmbedBuilder()
             .setColor(0x2596BE)
             .setTitle(`Prompt #${i + 1} of ${this.prompts.length}`)
