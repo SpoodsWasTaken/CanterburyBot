@@ -4,6 +4,7 @@ const token = process.env.DISCORD_TOKEN;
 const { boot, scheduleJobs } = require("./boot.js");
 const { handleStringSelectMenu } = require("./handlers/ui/stringSelect.js");
 const { handleButton } = require("./handlers/ui/button.js");
+const { handleAutocomplete } = require("./handlers/ui/autocomplete.js");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]});
 boot(client);
@@ -17,7 +18,7 @@ client.on(Events.InteractionCreate, async interaction => {
     if(interaction.isChatInputCommand()) { handleChatInputCommand(interaction) }
     else if(interaction.isStringSelectMenu()) { handleStringSelectMenu(interaction) }
     else if(interaction.isButton()) { handleButton(interaction) }
-
+    else if(interaction.isAutocomplete()) { handleAutocomplete(interaction) }
 })
 
 async function handleChatInputCommand(interaction) {

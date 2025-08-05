@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ChannelType, MessageFlags, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
 const { createDeck, getDecks } = require("../../resources/Deck.js");
-const { pool } = require("../../db/db.js");
+const { pool, runQuery } = require("../../db/db.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -64,10 +64,55 @@ module.exports = {
             subcommand
                 .setName("edit")
                 .setDescription("Edit decks in this channel.")
-                .addChannelOption(option =>
+                .addChannelOption(option => 
                     option
                         .setName("channel")
-                        .setDescription("Edit a deck linked to this channel. Defaults to current channel.")
+                        .setDescription("Pick from decks linked to this channel to edit.")
+                        .addChannelTypes(ChannelType.GuildText)
+                        .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option
+                        .setName("deck")
+                        .setDescription("Edit this deck.")
+                        .setAutocomplete(true)
+                        .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option
+                        .setName("name")
+                        .setDescription("Deck name.")
+                        .setMaxLength(90)
+                )
+                .addNumberOption(option => 
+                    option
+                        .setName("priority")
+                        .setDescription("Posting priority. 0-5, 0 = lowest priority. Decks with same priority are randomly selected per post.")
+                        .setMinValue(0)
+                        .setMaxValue(5)
+                )
+                .addStringOption(option => 
+                    option
+                        .setName("title")
+                        .setDescription("Title of prompt card.")
+                        .setMaxLength(100)
+                )
+                .addStringOption(option =>
+                    option
+                        .setName("description")
+                        .setDescription("Description/instructions that appear at the bottom of the prompt card.")
+                )
+                .addStringOption(option =>
+                    option
+                        .setName("colour")
+                        .setDescription("Hexcode of the card's accent colour. E.g. #ED1D24")
+                        .setMaxLength(7)
+                )
+                .addChannelOption(option =>
+                    option
+                        .setName("new-channel")
+                        .setDescription("Move this deck to another channel.")
+                        .addChannelTypes(ChannelType.GuildText)
                 )
         ),
     async execute(interaction) {
@@ -144,7 +189,57 @@ module.exports = {
         }
         else if(interaction.options.getSubcommand() === "edit") {
             try {
+                const deck = interaction.options.getString("deck");
+                const name = interaction.options.getString("name");
+                const priority = interaction.options.getNumber("priority");
+                const title = interaction.options.getString("title");
+                const description = interaction.options.getString("description");
+                const newChannel = interaction.options.getChannel("new-channel");
+                const colourRaw = interaction.options.getString("colour");
 
+                let query = "UPDATE decks SET";
+                let args = [];
+
+                if(name) {
+                    query += ` name = $${args.length + 1}`
+                    args.push(name)
+                }
+                if(priority) {
+                    query += ` priority = $${args.length + 1}`
+                    args.push(priority)
+                }
+                if(title) {
+                    query += ` title = $${args.length + 1}`
+                    args.push(title)
+                }
+                if(description) {
+                    query += ` description = $${args.length + 1}`
+                    args.push(description)
+                }
+                if(newChannel) {
+                    const newChannelId = newChannel.id;
+                    query += ` channel_id = $${args.length + 1}`
+                    args.push(newChannelId)
+                }
+                if(colourRaw) {
+                    const colour = validateColour(colourRaw);
+                    query += ` colour = $${args.length + 1}`
+                    args.push(colour)
+                }
+                if(args.length > 0) {
+                    query += ` WHERE id = $${args.length + 1}`
+                    args.push(deck);
+
+                    await runQuery(query, args);
+                    return interaction.reply({
+
+                    })
+                } else {
+                    return interaction.reply({
+                        content: "Please enter at least one field to edit.",
+                        flags: MessageFlags.Ephemeral
+                    })
+                }
             } catch(err) {
                 console.log("[WARN]", err);
             }

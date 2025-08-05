@@ -1,0 +1,40 @@
+const { runQuery } = require("../db/db.js");
+const deckCache = new Map();
+
+async function handleDeckEditAutocomplete(interaction, focus) {
+    const channelId = interaction.options._hoistedOptions.find(
+        opt => opt.name === 'channel'
+    )?.value;
+    let decksFound = deckCache.get(channelId);
+
+    if(!decksFound) {
+        decksFound = await getDecks(channelId);
+    }
+    const filtered = decksFound.filter(deck =>
+        deck.name.toLowerCase().includes(focus.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 25);
+
+    await interaction.respond(
+        filtered.map(deck => ({
+            name: deck.name,
+            value: deck.id.toString()
+        }))
+    )
+}
+async function getDecks(channelId) {
+    const res = await runQuery(`
+        SELECT id, name
+        FROM decks
+        WHERE channel_id = $1
+        ORDER BY priority DESC, name
+        LIMIT 10
+    `, [channelId])
+    
+    deckCache.set(channelId, res.rows);
+    setTimeout(async () => { deckCache.delete(channelId) }, 3 * 60 * 1000);
+    return res.rows;
+}
+
+module.exports = { handleDeckEditAutocomplete }
