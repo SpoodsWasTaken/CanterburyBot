@@ -1,6 +1,9 @@
 const { SlashCommandBuilder, ChannelType, MessageFlags } = require("discord.js");
 const QuestionPrompt = require("../resources/QuestionPrompt.js");
 const { pool } = require("../db/db.js");
+const { checkChannelExists } = require("../handlers/channels.js");
+
+const channelCache = [];
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -27,9 +30,20 @@ module.exports = {
     async execute(interaction) {
         if(interaction.options.getSubcommand() === "new") {
             try {
+                const channel = interaction.options.getChannel("channel") || interaction.channel;
+
+                if(!channelCache.includes(channel.id)) {
+                    if(!(await checkChannelExists(channel.id))) {
+                        return interaction.reply({
+                            content: "Channel has not been enabled for QOTD.",
+                            flags: MessageFlags.Ephemeral
+                        })
+                    } else {
+                        channelCache.push(channel.id);
+                    }
+                }
                 const promptText = interaction.options.getString("text");
                 const guild = interaction.guild;
-                const channel = interaction.options.getChannel("channel") || interaction.channel;
                 const author = interaction.user;
 
                 const newPrompt = new QuestionPrompt(promptText, guild.id, channel.id, author.id);

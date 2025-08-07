@@ -2,12 +2,13 @@ const cron = require("node-cron");
 const { SlashCommandBuilder, ChannelType, MessageFlags, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
 const { runQuery } = require("../../db/db.js");
 const { activeQotdJobs, sendQotd } = require("../../handlers/qotdPost.js");
+const { updateChannel } = require("../../handlers/channels.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("schedule")
         .setDescription("Schedule your QOTD prompts.")
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
         .addStringOption(option =>
             option
                 .setName("time")
@@ -43,14 +44,7 @@ module.exports = {
 
             const cronTz = `Etc/GMT${parseInt(timezone) > 0 ? "-" : "+"}${Math.abs(parseInt(timezone))}`;
 
-            await runQuery(`
-                INSERT INTO channels (
-                    id,
-                    cron_expression,
-                    utc_offset,
-                    suggestion_limit
-                ) VALUES ($1, $2, $3, $4)
-            `, [channel.id, cronEx, cronTz, 50]);
+            await updateChannel(channel.id, cronEx, cronTz)
 
             const job = cron.schedule(cronEx, async() => {
                 sendQotd(interaction.client, channel);

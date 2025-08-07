@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, ChannelType, MessageFlags, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
 const { createDeck, getDecks } = require("../../resources/Deck.js");
+const { updateChannel, channelBump } = require("../../handlers/channels.js");
 const { pool, runQuery } = require("../../db/db.js");
 
 module.exports = {
@@ -197,42 +198,44 @@ module.exports = {
                 const newChannel = interaction.options.getChannel("new-channel");
                 const colourRaw = interaction.options.getString("colour");
 
-                let query = "UPDATE decks SET";
+                let clauses = [];
                 let args = [];
 
                 if(name) {
-                    query += ` name = $${args.length + 1}`
+                    clauses.push(` name = $${args.length + 1}`);
                     args.push(name)
                 }
                 if(priority) {
-                    query += ` priority = $${args.length + 1}`
+                    clauses.push(` priority = $${args.length + 1}`);
                     args.push(priority)
                 }
                 if(title) {
-                    query += ` title = $${args.length + 1}`
+                    clauses.push(` title = $${args.length + 1}`);
                     args.push(title)
                 }
                 if(description) {
-                    query += ` description = $${args.length + 1}`
+                    clauses.push(` description = $${args.length + 1}`);
                     args.push(description)
                 }
                 if(newChannel) {
                     const newChannelId = newChannel.id;
-                    query += ` channel_id = $${args.length + 1}`
+                    clauses.push(` channel_id = $${args.length + 1}`);
                     args.push(newChannelId)
+                    updateChannel(newChannelId);
                 }
                 if(colourRaw) {
                     const colour = validateColour(colourRaw);
-                    query += ` colour = $${args.length + 1}`
+                    clauses.push(` colour = $${args.length + 1}`);
                     args.push(colour)
                 }
                 if(args.length > 0) {
-                    query += ` WHERE id = $${args.length + 1}`
+                    const query = `UPDATE decks SET ${clauses.join(", ")} WHERE id = $${args.length + 1}`
                     args.push(deck);
 
                     await runQuery(query, args);
                     return interaction.reply({
-
+                        content: "Edits successfully saved!",
+                        flags: MessageFlags.Ephemeral
                     })
                 } else {
                     return interaction.reply({

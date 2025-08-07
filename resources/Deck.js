@@ -39,6 +39,7 @@ class Deck {
 async function createDeck(db, guild, channel, name, priority, title, description, colour) {
     if(!priority) priority = 0;
     if(!title) title = "Question of the Day"
+    if(!colour) colour = "#2596BE"
     
     const newDeck = new Deck(guild, channel, name, priority, title, description, colour);
     const mountedName = await newDeck.mount(db);

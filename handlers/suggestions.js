@@ -1,6 +1,7 @@
 const { MessageFlags, EmbedBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
 const { pool, runQuery } = require("../db/db.js");
 const { createDeck } = require("../resources/Deck.js");
+const { bumpChannel } = require("./channels.js");
 
 const promptMenus = new Map();
 
@@ -41,6 +42,7 @@ async function handleApprovalDropdown(interaction) {
         );
         const menu = new PromptMenu(interaction, decksResult.rows, promptsResult.rows, authors);
         promptMenus.set(interaction.guild.id, menu);
+        bumpChannel(selectedChannelId);
 
         const exitBtn = new ButtonBuilder()
             .setCustomId("approve exit")
@@ -85,14 +87,14 @@ async function handleApprovalButton(interaction) {
                     approved_by = $2
                 WHERE id = $3
             `, [deck, approver, prompt])
-            console.log(`[QOTD] Prompt ${prompt} was approved in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.name}`)
+            console.log(`[QOTD] Prompt ${prompt} was approved in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.username}`)
         }
         else if(type === "-") {
             await runQuery(`
                 DELETE FROM prompts
                 WHERE id = $1
             `, [prompt])
-            console.log(`[QOTD] Prompt ${prompt} was denied in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.name}`)
+            console.log(`[QOTD] Prompt ${prompt} was denied in ${interaction.channel.name} - ${interaction.guild.name} by ${interaction.user.username}`)
         }
 
         menu.deckSelected(msg);
@@ -138,6 +140,7 @@ class PromptMenu {
         this.followUpQueue = [];
         this.isProcessing = false;
         this.messages = [];
+        this.done = false;
 
         if(this.decks.length > 1) {
             const options = this.decks.map(({ id, name, priority }) => {
@@ -200,7 +203,13 @@ class PromptMenu {
                     components: []
                 }
                 x.edit(msg);
-                setTimeout(async () => { x.delete() }, 2900);
+                setTimeout(async () => { 
+                    try {
+                        await x.delete();
+                    } catch(err) {
+                        return;
+                    }
+                 }, 2900);
                 this.messages.splice(i, 1);
 
                 if(this.messages.length == 0 && x.channel.isThread()) {
@@ -221,9 +230,16 @@ class PromptMenu {
         
     }
     closeMenu(msg) {
-        msg.channel.delete();
-        promptMenus.delete(this.interaction.guild.id)
-        console.log(`[QOTD] ${this.interaction.user.username} has finished approving prompts in ${this.interaction.guild.name}`)
+        try {
+            if(this.done) return;
+            
+            this.done = true;
+            msg.channel.delete();
+            promptMenus.delete(this.interaction.guild.id)
+            console.log(`[QOTD] ${this.interaction.user.username} has finished approving prompts in ${this.interaction.guild.name}`)
+        } catch(err) {
+            return;
+        }
     }
     generatePromptApprovalCard(prompt, i, authorName) {
         const promptCard = new EmbedBuilder()

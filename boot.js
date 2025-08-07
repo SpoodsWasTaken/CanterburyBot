@@ -9,6 +9,7 @@ const clientId = process.env.DISCORD_CLIENT_ID;
 
 const { runQuery, testConnection } = require("./db/db.js");
 const { activeQotdJobs, sendQotd } = require("./handlers/qotdPost.js");
+const { channelCache } = require("./handlers/channels.js");
 
 function boot(client) {
     client.commands = new Collection();
@@ -47,11 +48,15 @@ function boot(client) {
 }
 async function scheduleJobs(client) {
     try {
-        const res = await runQuery(`SELECT id, cron_expression as cronex, utc_offset as crontz FROM channels`);
+        const res = await runQuery(`
+            SELECT id, cron_expression as cronex, utc_offset as crontz 
+            FROM channels
+            WHERE cron_expression IS NOT NULL AND utc_offset IS NOT NULL
+        `);
 
         for(const row of res.rows) {
             const channel = await client.channels.fetch(row.id);
-            const job = cron.schedule(row.cronex, async() => {
+            const job = cron.schedule(row.cronex, async () => {
                 sendQotd(client, channel);
             }, {
                 timezone: row.crontz,
@@ -60,11 +65,21 @@ async function scheduleJobs(client) {
             activeQotdJobs.set(channel.id, job);
             console.log(`[QOTD] Scheduled job for #${channel.name} for ${row.cronex} (UTC ${row.crontz}[+/- flipped])`)
         }
+    
+        cron.schedule(" * * 0 * * * ", async () => { clearCaches() })
+
     } catch(err) {
         console.log("[WARN]", err);
     }
 }
-
+function clearCaches() {
+    try {
+        channelCache.length = 0;
+        console.log("[CLEAN] Cleared channel activity cache")
+    } catch(err) {
+        console.log("[WARN]", err);
+    }
+}
 // Helper function to recursively get all .js files in dir
 function getJsFiles(dir) {
     let jsFiles = [];
