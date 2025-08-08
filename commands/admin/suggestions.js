@@ -43,7 +43,6 @@ async function sendList(interaction, guild) {
                 flags: MessageFlags.Ephemeral
             })
         }
-        console.log(`[QOTD] ${interaction.user.username} is approving prompts in ${guild.name}`)
         promptMenus.set(guild.id, null);
         const prompts = await runQuery(`
             SELECT channel_id, COUNT(*) as count
@@ -52,6 +51,14 @@ async function sendList(interaction, guild) {
             AND deck_id IS NULL
             GROUP BY channel_id
         `, [guild.id])
+        if(prompts.rows.length === 0) {
+            console.log(`[QOTD] ${interaction.user.username} tried approving prompts in ${guild.name}, but no pending suggestions were found`);
+            return interaction.reply({
+                content: "There are no pending suggestions to approve in this server.",
+                flags: MessageFlags.Ephemeral
+            })
+        }
+        console.log(`[QOTD] ${interaction.user.username} is approving prompts in ${guild.name}`)
         const channelData = {};
         await Promise.all(
             prompts.rows.map(async ({ channel_id }) => {

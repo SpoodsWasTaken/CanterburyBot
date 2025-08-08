@@ -66,7 +66,7 @@ async function scheduleJobs(client) {
             console.log(`[QOTD] Scheduled job for #${channel.name} for ${row.cronex} (UTC ${row.crontz}[+/- flipped])`)
         }
     
-        cron.schedule(" * * 0 * * * ", async () => { clearCaches() })
+        cron.schedule(" 0 0 0 * * * ", async () => { clearCaches() })
 
     } catch(err) {
         console.log("[WARN]", err);

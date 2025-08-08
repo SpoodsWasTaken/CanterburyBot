@@ -72,10 +72,11 @@ async function sendQotd(client, channel) {
             .setLabel("✏️ Suggest")
             .setStyle(ButtonStyle.Secondary)
         const row = new ActionRowBuilder().addComponents(suggestButton);
-        channel.send({
+        await channel.send({
             embeds: [promptCard],
             components: [row]
         })
+        console.log(`[QOTD] Prompt ${promptId}: ${promptText} sent in channel ${channel.id}`)
     } catch(err) {
         console.log("[WARN]", err);
     }
