@@ -36,5 +36,14 @@ async function getDecks(channelId) {
     setTimeout(async () => { deckCache.delete(channelId) }, 3 * 60 * 1000);
     return res.rows;
 }
+async function getPromptsInDeck(deckId) {
+    const res = await runQuery(`
+        SELECT id, text, author_id as authorId, approved_by as approvedBy
+        FROM prompts 
+        WHERE deck_id = $1
+    `, [deckId])
 
-module.exports = { handleDeckEditAutocomplete }
+    return res.rows;
+}
+
+module.exports = { handleDeckEditAutocomplete, getPromptsInDeck }

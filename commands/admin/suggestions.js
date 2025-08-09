@@ -3,6 +3,7 @@ const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits, StringSelectMenu
  } = require("discord.js");
 const { pool, runQuery } = require("../../db/db.js");
 const { promptMenus } = require("../../handlers/suggestions.js");
+const { checkApprover } = require("../../handlers/suggestions.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -109,16 +110,4 @@ async function sendList(interaction, guild) {
     } catch(err) {
         console.log("[WARN]", err);
     }
-}
-async function checkApprover(guild, user) {
-    const approver = await runQuery(
-        "SELECT 1 FROM approvers WHERE guild_id = $1 AND user_id = $2",
-        [guild.id, user.id]
-    );
-    const member = await guild.members.fetch(user.id);
-    const admin = member.permissions.has(PermissionFlagsBits.Administrator)
-    if(approver.rowCount === 0 && !admin) {
-        return false;
-    }
-    return true;
 }

@@ -1,5 +1,6 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
 const { pool, runQuery } = require("../db/db.js");
+const { deletePrompt } = require("../handlers/prompts.js");
 const activeQotdJobs = new Map();
 
 async function sendQotd(client, channel) {
@@ -76,7 +77,8 @@ async function sendQotd(client, channel) {
             embeds: [promptCard],
             components: [row]
         })
-        console.log(`[QOTD] Prompt ${promptId}: ${promptText} sent in channel ${channel.id}`)
+        console.log(`[QOTD] Prompt ${promptId}: ${info.rows[0].text} sent in channel ${channel.id}`);
+        await deletePrompt(info.rows[0].deck_id);
     } catch(err) {
         console.log("[WARN]", err);
     }

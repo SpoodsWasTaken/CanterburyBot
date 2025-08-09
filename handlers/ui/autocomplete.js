@@ -8,6 +8,9 @@ function handleAutocomplete(interaction) {
         if(interaction.commandName === "deck" && subcommand === "edit") {
             handleDeckEditAutocomplete(interaction, focusedValue);
         }
+        if(interaction.commandName === "prompts" && subcommand === "list") {
+            handleDeckEditAutocomplete(interaction, focusedValue);
+        }
     } catch(err) {
         console.log("[WARN]", err);
     }

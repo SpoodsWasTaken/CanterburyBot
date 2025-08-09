@@ -45,7 +45,7 @@ async function createDeck(db, guild, channel, name, priority, title, description
     const mountedName = await newDeck.mount(db);
     return mountedName;
 }
-async function getDecks(db, channel) {
+async function getDecksWithApprovedCount(db, channel) {
     const res = await db.query(`
         SELECT 
             d.name as name,
@@ -68,4 +68,4 @@ async function getDecks(db, channel) {
     return res.rows;
 }
 
-module.exports = { Deck, createDeck, getDecks };
+module.exports = { Deck, createDeck, getDecksWithApprovedCount };

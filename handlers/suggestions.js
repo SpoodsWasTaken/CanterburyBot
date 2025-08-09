@@ -1,10 +1,22 @@
-const { MessageFlags, EmbedBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
+const { MessageFlags, PermissionFlagsBits, EmbedBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
 const { pool, runQuery } = require("../db/db.js");
 const { createDeck } = require("../resources/Deck.js");
 const { bumpChannel } = require("./channels.js");
 
 const promptMenus = new Map();
 
+async function checkApprover(guild, user) {
+    const approver = await runQuery(
+        "SELECT 1 FROM approvers WHERE guild_id = $1 AND user_id = $2",
+        [guild.id, user.id]
+    );
+    const member = await guild.members.fetch(user.id);
+    const admin = member.permissions.has(PermissionFlagsBits.Administrator)
+    if(approver.rowCount === 0 && !admin) {
+        return false;
+    }
+    return true;
+}
 async function handleApprovalDropdown(interaction) {
     try {
         const iterLimit = 5;
@@ -277,4 +289,5 @@ class PromptMenu {
     }
 }
 
-module.exports = { promptMenus, handleApprovalDropdown, handleExitApproval, handleApprovalButton, handleApprovalDeck }
+module.exports = { promptMenus, checkApprover, handleApprovalDropdown, 
+    handleExitApproval, handleApprovalButton, handleApprovalDeck }
