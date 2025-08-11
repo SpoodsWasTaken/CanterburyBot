@@ -6,7 +6,7 @@ const { handleStringSelectMenu } = require("./handlers/ui/stringSelect.js");
 const { handleButton } = require("./handlers/ui/button.js");
 const { handleAutocomplete } = require("./handlers/ui/autocomplete.js");
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]});
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent ]});
 boot(client);
 client.once(Events.ClientReady, readyClient => {
     console.log(`[BOOT-END] Ready! Logged in as ${readyClient.user.tag}`);

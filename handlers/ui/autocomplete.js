@@ -8,7 +8,7 @@ function handleAutocomplete(interaction) {
         if(interaction.commandName === "deck" && subcommand === "edit") {
             handleDeckEditAutocomplete(interaction, focusedValue);
         }
-        if(interaction.commandName === "prompts" && subcommand === "list") {
+        if(interaction.commandName === "prompts") {
             handleDeckEditAutocomplete(interaction, focusedValue);
         }
     } catch(err) {

@@ -1,5 +1,7 @@
 const { runQuery } = require("../db/db.js");
 
+const promptCountCache = new Map();
+
 async function updatePrompt(promptId, newDeckId) {
     try {
         return;
@@ -16,7 +18,7 @@ async function deletePrompt(promptId) {
         `, [promptId])
 
         if(res.rows.length === 0) return null;  
-        console.log("[QOTD] Prompt ${promptId} deleted.")
+        console.log(`[QOTD] Prompt ${promptId} deleted`)
         return res.rows[0].text;
     } catch(err) {
         console.log("[WARN]", err);

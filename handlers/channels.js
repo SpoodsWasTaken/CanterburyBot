@@ -1,4 +1,4 @@
-const { runQuery } = require("../db/db.js");
+const { pool, runQuery } = require("../db/db.js");
 const channelCache = [];
 const maxSuggestions = 50;
 
@@ -7,6 +7,8 @@ async function registerChannel(channelId, cronEx, cronTz, suggestionLimit) {
         if(!channelId) return false;
         if(!suggestionLimit) suggestionLimit = maxSuggestions;
 
+        if(await checkChannelExists(channelId)) return false;
+        
         let query = "INSERT INTO channels (id,";
         let args = [channelId];
 
@@ -73,6 +75,13 @@ async function updateChannel(channelId, cronEx, cronTz, suggestionLimit) {
         throw err;
     }
 }
+async function deleteChannel(channelId) {
+    try {
+        return; 
+    } catch(err) {
+        throw err;
+    }
+}
 async function bumpChannel(channelId) {
     if(channelCache.includes(channelId)) return;
     try {
@@ -106,4 +115,4 @@ async function checkChannelExists(channelId) {
     return checkExists.rows[0].exists;
 }
 
-module.exports = { maxSuggestions, channelCache, registerChannel, updateChannel, bumpChannel, checkChannelExists }
+module.exports = { maxSuggestions, channelCache, registerChannel, updateChannel, deleteChannel, bumpChannel, checkChannelExists }

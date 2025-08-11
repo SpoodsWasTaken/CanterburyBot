@@ -1,5 +1,6 @@
 const { runQuery } = require("../db/db.js");
 const deckCache = new Map();
+const maxPrompts = 365;
 
 async function handleDeckEditAutocomplete(interaction, focus) {
     const channelId = interaction.options._hoistedOptions.find(
@@ -36,6 +37,27 @@ async function getDecks(channelId) {
     setTimeout(async () => { deckCache.delete(channelId) }, 3 * 60 * 1000);
     return res.rows;
 }
+async function getDecksWithApprovedCount(channel) {
+    const res = await runQuery(`
+        SELECT 
+            d.name as name,
+            d.priority as priority,
+            d.title as title,
+            d.description as desc,
+            d.colour as colour,
+            COUNT(p.id) AS approved,
+            (
+                SELECT COUNT(*) 
+                FROM prompts 
+                WHERE channel_id = $1 AND deck_id IS NULL
+            ) AS unapproved
+        FROM decks d
+        LEFT JOIN prompts p ON p.deck_id = d.id
+        WHERE d.channel_id = $1
+        GROUP BY d.id, d.name, d.priority, d.title, d.description, d.colour`, 
+        [channel.id])
+    return res.rows;
+}
 async function getPromptsInDeck(deckId) {
     const res = await runQuery(`
         SELECT id, text, author_id as authorId, approved_by as approvedBy
@@ -46,4 +68,4 @@ async function getPromptsInDeck(deckId) {
     return res.rows;
 }
 
-module.exports = { handleDeckEditAutocomplete, getPromptsInDeck }
+module.exports = { maxPrompts, handleDeckEditAutocomplete, getDecksWithApprovedCount, getPromptsInDeck }

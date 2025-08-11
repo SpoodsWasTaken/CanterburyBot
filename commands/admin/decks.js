@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, ChannelType, MessageFlags, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
-const { createDeck, getDecksWithApprovedCount } = require("../../resources/Deck.js");
+const { createDeck } = require("../../resources/Deck.js");
+const { getDecksWithApprovedCount } = require("../../handlers/decks.js");
 const { updateChannel, bumpChannel } = require("../../handlers/channels.js");
 const { pool, runQuery } = require("../../db/db.js");
 
@@ -160,7 +161,7 @@ module.exports = {
             try {
                 const channel = interaction.options.getChannel("channel") || interaction.channel;
 
-                const results = await getDecksWithApprovedCount(pool, channel);
+                const results = await getDecksWithApprovedCount(channel);
                 if(results.length == 0) {
                     return interaction.reply({
                         content: `The specified channel has no linked decks.`,

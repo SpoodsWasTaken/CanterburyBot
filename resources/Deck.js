@@ -1,3 +1,5 @@
+const { pool } = require("../db/db.js");
+
 class Deck { 
     constructor(_guild, _channel, _name, _priority, _title, _description, _colour) {
         this.guild = _guild;
@@ -9,12 +11,12 @@ class Deck {
         this.colour = _colour;
     }
 
-    async mount(db) {
+    async mount() {
         if(!this.guild || !this.channel || !this.name) {
             throw new Error("Missing required fields for deck.");
         }
         try {
-            const result = await db.query(`
+            const result = await pool.query(`
                 INSERT INTO decks (
                     guild_id,
                     channel_id,
@@ -36,36 +38,15 @@ class Deck {
         }
     }
 }
-async function createDeck(db, guild, channel, name, priority, title, description, colour) {
+async function createDeck(guild, channel, name, priority, title, description, colour) {
     if(!priority) priority = 0;
     if(!title) title = "Question of the Day"
     if(!colour) colour = "#2596BE"
     
     const newDeck = new Deck(guild, channel, name, priority, title, description, colour);
-    const mountedName = await newDeck.mount(db);
+    const mountedName = await newDeck.mount(pool);
+    console.log(`[QOTD] Created new deck ${name} with priority ${priority} in channel ${channel}`);
     return mountedName;
 }
-async function getDecksWithApprovedCount(db, channel) {
-    const res = await db.query(`
-        SELECT 
-            d.name as name,
-            d.priority as priority,
-            d.title as title,
-            d.description as desc,
-            d.colour as colour,
-            COUNT(p.id) AS approved,
-            (
-                SELECT COUNT(*) 
-                FROM prompts 
-                WHERE channel_id = $1 AND deck_id IS NULL
-            ) AS unapproved
-        FROM decks d
-        LEFT JOIN prompts p ON p.deck_id = d.id
-        WHERE d.channel_id = $1
-        GROUP BY d.id, d.name, d.priority, d.title, d.description, d.colour`, 
-        [channel.id])
-    
-    return res.rows;
-}
 
-module.exports = { Deck, createDeck, getDecksWithApprovedCount };
+module.exports = { Deck, createDeck };

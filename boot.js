@@ -9,7 +9,7 @@ const clientId = process.env.DISCORD_CLIENT_ID;
 
 const { runQuery, testConnection } = require("./db/db.js");
 const { activeQotdJobs, sendQotd } = require("./handlers/qotdPost.js");
-const { channelCache } = require("./handlers/channels.js");
+const { channelCache, deleteChannel } = require("./handlers/channels.js");
 
 function boot(client) {
     client.commands = new Collection();
@@ -55,19 +55,26 @@ async function scheduleJobs(client) {
         `);
 
         for(const row of res.rows) {
-            const channel = await client.channels.fetch(row.id);
-            const job = cron.schedule(row.cronex, async () => {
-                sendQotd(client, channel);
-            }, {
-                timezone: row.crontz,
-                scheduled: true
-            })
-            activeQotdJobs.set(channel.id, job);
-            console.log(`[QOTD] Scheduled job for #${channel.name} for ${row.cronex} (UTC ${row.crontz}[+/- flipped])`)
+            try {
+                const channel = await client.channels.fetch(row.id);
+                const job = cron.schedule(row.cronex, async () => {
+                    sendQotd(client, channel);
+                }, {
+                    timezone: row.crontz,
+                    scheduled: true
+                })
+                activeQotdJobs.set(channel.id, job);
+                console.log(`[QOTD] Scheduled job for #${channel.name} for ${row.cronex} (${row.crontz} [+/- flipped])`)
+            } catch(err) {
+                if(err.code === 10003) {
+                    console.log(`[WARN] Could not schedule job in channel ${row.id} - deleted or inaccessible`);
+                    continue;
+                }
+                console.log("[WARN]", err);
+            }   
         }
     
         cron.schedule(" 0 0 0 * * * ", async () => { clearCaches() })
-
     } catch(err) {
         console.log("[WARN]", err);
     }

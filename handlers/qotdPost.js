@@ -66,7 +66,7 @@ async function sendQotd(client, channel) {
             .setTitle(title)
             .setDescription(promptText)
             .setFooter({
-                text: `Author: ${authorName} | Card: ${promptId} | Deck: ${deckName} | ${approved} Cards in Deck | ${unapproved} Suggestions`
+                text: `Author: ${authorName} | Card: ${promptId} | Deck: ${deckName} | ${approved - 1} Cards in Deck | ${unapproved} Suggestions`
             })
         const suggestButton = new ButtonBuilder()
             .setCustomId("suggestPrompt")
@@ -78,7 +78,7 @@ async function sendQotd(client, channel) {
             components: [row]
         })
         console.log(`[QOTD] Prompt ${promptId}: ${info.rows[0].text} sent in channel ${channel.id}`);
-        await deletePrompt(info.rows[0].deck_id);
+        await deletePrompt(promptId);
     } catch(err) {
         console.log("[WARN]", err);
     }

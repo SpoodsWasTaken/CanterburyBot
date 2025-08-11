@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ChannelType, MessageFlags, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
 const { maxSuggestions, registerChannel } = require("../../handlers/channels.js");
-const { createDeck, getDecks } = require("../../resources/Deck.js");
+const { createDeck } = require("../../resources/Deck.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -74,12 +74,13 @@ module.exports = {
                     const channel = interaction.options.getChannel("channel") || interaction.channel;
                     const max = interaction.options.getInteger("max_suggestions") || maxSuggestions;
 
-                    if(!registerChannel(channel.id, null, null, max)) {
+                    if(!(await registerChannel(channel.id, null, null, max))) {
                         return interaction.reply({
                             content: "Could not enable QOTD in this channel. Has it been enabled already?",
                             flags: MessageFlags.Ephemeral
                         })
                     }
+                    createDeck(interaction.guild.id, channel.id, "Default");
                     return interaction.reply({
                         content: "QOTD enabled in this channel! Schedule posts with `/schedule`, and use `/suggest` to start adding questions!"
                     })

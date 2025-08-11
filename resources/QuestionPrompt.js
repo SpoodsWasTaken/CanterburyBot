@@ -19,6 +19,10 @@ class QuestionPrompt {
 
         return result;
     }
+    approve(_deck, _approvedBy) {
+        this.deck = _deck;
+        this.approvedBy = _approvedBy;
+    }
     async mount(db) {
         if(!this.query || !this.channel || !this.author) {
             throw new Error("Missing required fields for prompt");
