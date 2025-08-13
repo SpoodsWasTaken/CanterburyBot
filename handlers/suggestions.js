@@ -36,7 +36,7 @@ async function handleApprovalDropdown(interaction) {
             `, [selectedChannelId])
         ]);
         if(decksResult.rows.length === 0) {
-            createDeck(pool, guild.id, selectedChannelId, "Default", 0);
+            createDeck(guild.id, selectedChannelId, "Default", 0);
         }
         const authorIds = [...new Set(promptsResult.rows.map(prompt => prompt.author_id))];
         const authors = new Map(

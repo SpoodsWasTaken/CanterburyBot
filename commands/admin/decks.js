@@ -141,10 +141,9 @@ module.exports = {
                         flags: MessageFlags.Ephemeral
                     })
                 }
-
                 const mountedName = await createDeck(pool, guild.id, channel.id, name, priority, title, description, colour);
                 const response = `New deck created: ${mountedName}`;
-
+                bumpChannel(channel.id);
                 await interaction.reply({
                     content: response,
                     flags: MessageFlags.Ephemeral
@@ -234,6 +233,7 @@ module.exports = {
                     args.push(deck);
 
                     await runQuery(query, args);
+                    bumpChannel(channel.id);
                     return interaction.reply({
                         content: "Edits successfully saved!",
                         flags: MessageFlags.Ephemeral

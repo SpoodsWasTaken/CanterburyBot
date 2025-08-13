@@ -8,6 +8,8 @@ function handleButton(interaction) {
             if(args[1] === "exit") {
                 handleExitApproval(interaction);
             } else { handleApprovalButton(interaction); }
+        } else if (args[0] === "suggestPrompt") {
+            return;
         }
     } catch(err) {
         console.log("[WARN]:", err);

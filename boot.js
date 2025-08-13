@@ -8,7 +8,7 @@ const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
 
 const { runQuery, testConnection } = require("./db/db.js");
-const { activeQotdJobs, sendQotd } = require("./handlers/qotdPost.js");
+const { setSchedule, sendQotd } = require("./handlers/qotdPost.js");
 const { channelCache, deleteChannel } = require("./handlers/channels.js");
 
 function boot(client) {
@@ -63,7 +63,7 @@ async function scheduleJobs(client) {
                     timezone: row.crontz,
                     scheduled: true
                 })
-                activeQotdJobs.set(channel.id, job);
+                setSchedule(channel.id, job);
                 console.log(`[QOTD] Scheduled job for #${channel.name} for ${row.cronex} (${row.crontz} [+/- flipped])`)
             } catch(err) {
                 if(err.code === 10003) {

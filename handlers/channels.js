@@ -87,7 +87,10 @@ async function bumpChannel(channelId) {
     try {
         const exists = await checkChannelExists(channelId);
 
-        if(!exists) return false; 
+        if(!exists) {
+            registerChannel(channelId);
+            return;
+        }; 
 
         await runQuery(`UPDATE channels SET last_updated = $1 WHERE id = $2`,
             [new Date(), channelId]);

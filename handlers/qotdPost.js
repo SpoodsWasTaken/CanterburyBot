@@ -83,5 +83,13 @@ async function sendQotd(client, channel) {
         console.log("[WARN]", err);
     }
 }
+function setSchedule(channelId, job) {
+    const existingJob = activeQotdJobs.get(channelId);
 
-module.exports = { activeQotdJobs, sendQotd }
+    if(existingJob) {
+        existingJob.stop();
+    }
+    activeQotdJobs.set(channelId, job);
+}
+
+module.exports = { activeQotdJobs, setSchedule, sendQotd }

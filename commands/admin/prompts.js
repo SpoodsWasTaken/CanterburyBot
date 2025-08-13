@@ -4,6 +4,7 @@ const { SlashCommandBuilder, ChannelType, MessageFlags, EmbedBuilder, ActionRowB
 const { pool, runQuery } = require("../../db/db.js");
 const { maxPrompts, getPromptsInDeck } = require("../../handlers/decks.js");
 const { checkApprover } = require("../../handlers/suggestions.js");
+const { bumpChannel } = require("../../handlers/channels.js");
 const Paginated = require("../../resources/Paginated.js");
 const QuestionPrompt = require("../../resources/QuestionPrompt.js");
 
@@ -157,6 +158,7 @@ module.exports = {
                 collector.on("end", () => {
                     message.edit({ content: "Approval confirmation timed out." }).catch(() => {});
                 })
+                bumpChannel(channel.id);
             } catch(err) {
                 console.log("[WARN]", err);
             }
@@ -262,21 +264,19 @@ module.exports = {
                         setTimeout(async () => { 
                             try{
                                 if(thread.isThread()) {
-                                    thread.delete();
+                                    await thread.delete();
                                 }
                             } catch(err) {}
                         }, 3000);
                     });
-                    collector.on("end", () => {
-                        response.edit({ content: "Approval confirmation timed out." }).catch(() => {});
-                        setTimeout(async () => { 
-                            try{
-                                if(thread.isThread()) {
-                                    thread.delete();
-                                }
-                            } catch(err) {}
-                        }, 3000);
-                    })
+                    collector.on("end", async () => {
+                        try{
+                            if(thread.isThread()) {
+                                await thread.delete();
+                            }
+                        } catch(err) {}
+                    });
+                    bumpChannel(channel.id);
                 }
             } catch(err) {
                 console.log("[WARN]", err);

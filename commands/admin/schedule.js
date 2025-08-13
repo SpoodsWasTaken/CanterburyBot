@@ -1,7 +1,7 @@
 const cron = require("node-cron");
 const { SlashCommandBuilder, ChannelType, MessageFlags, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
 const { runQuery } = require("../../db/db.js");
-const { activeQotdJobs, sendQotd } = require("../../handlers/qotdPost.js");
+const { setSchedule, sendQotd } = require("../../handlers/qotdPost.js");
 const { updateChannel } = require("../../handlers/channels.js");
 
 module.exports = {
@@ -44,15 +44,15 @@ module.exports = {
 
             const cronTz = `Etc/GMT${parseInt(timezone) > 0 ? "-" : "+"}${Math.abs(parseInt(timezone))}`;
 
-            await updateChannel(channel.id, cronEx, cronTz)
-
             const job = cron.schedule(cronEx, async() => {
                 sendQotd(interaction.client, channel);
             }, {
                 timezone: cronTz,
                 scheduled: true
             })
-            activeQotdJobs.set(channel.id, job);
+            setSchedule(channel.id, job);
+            await updateChannel(channel.id, cronEx, cronTz);
+            console.log(`[QOTD] Scheduled job for #${channel.name} for ${cronEx} (${cronTz} [+/- flipped])`)
             const successCard = new EmbedBuilder()
                 .setColor(0x2596BE)
                 .setTitle("QOTD Scheduled")

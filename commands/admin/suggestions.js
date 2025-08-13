@@ -2,8 +2,7 @@ const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits, StringSelectMenu
     ChannelType, EmbedBuilder
  } = require("discord.js");
 const { pool, runQuery } = require("../../db/db.js");
-const { promptMenus } = require("../../handlers/suggestions.js");
-const { checkApprover } = require("../../handlers/suggestions.js");
+const { promptMenus, checkApprover } = require("../../handlers/suggestions.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
