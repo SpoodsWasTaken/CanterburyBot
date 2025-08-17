@@ -1,6 +1,7 @@
 const { runQuery } = require("../db/db.js");
 const deckCache = new Map();
 const maxPrompts = 365;
+const maxDecks = 5;
 
 async function handleDeckEditAutocomplete(interaction, focus) {
     const channelId = interaction.options._hoistedOptions.find(

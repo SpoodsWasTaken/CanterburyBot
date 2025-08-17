@@ -1,4 +1,4 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags } = require("discord.js");
 const { pool, runQuery } = require("../db/db.js");
 const { deletePrompt } = require("../handlers/prompts.js");
 const activeQotdJobs = new Map();
@@ -91,5 +91,11 @@ function setSchedule(channelId, job) {
     }
     activeQotdJobs.set(channelId, job);
 }
+async function sendSuggestCommand(interaction) {
+    await interaction.reply({ 
+        content: 'Click to start command:\n</suggest new:1399747705663782972>',
+        flags: MessageFlags.Ephemeral
+    });
+}
 
-module.exports = { activeQotdJobs, setSchedule, sendQotd }
+module.exports = { activeQotdJobs, setSchedule, sendQotd, sendSuggestCommand }

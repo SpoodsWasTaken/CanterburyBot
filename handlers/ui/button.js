@@ -1,4 +1,5 @@
 const { handleExitApproval, handleApprovalButton } = require("../suggestions.js");
+const { sendSuggestCommand } = require("../qotdPost.js");
 const handled = new Set(); 
 
 function handleButton(interaction) {
@@ -9,7 +10,7 @@ function handleButton(interaction) {
                 handleExitApproval(interaction);
             } else { handleApprovalButton(interaction); }
         } else if (args[0] === "suggestPrompt") {
-            return;
+            sendSuggestCommand(interaction);
         }
     } catch(err) {
         console.log("[WARN]:", err);

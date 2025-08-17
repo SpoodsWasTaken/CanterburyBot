@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Client, Events, GatewayIntentBits, MessageFlags } = require("discord.js");
+const { Client, Events, GatewayIntentBits, MessageFlags, ActivityType } = require("discord.js");
 const token = process.env.DISCORD_TOKEN;
 const { boot, scheduleJobs } = require("./boot.js");
 const { handleStringSelectMenu } = require("./handlers/ui/stringSelect.js");
@@ -10,6 +10,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 boot(client);
 client.once(Events.ClientReady, readyClient => {
     console.log(`[BOOT-END] Ready! Logged in as ${readyClient.user.tag}`);
+    client.user.setActivity(`with Spoods' feelings`, { type: ActivityType.Playing });
     scheduleJobs(client);
 });
 client.login(token);

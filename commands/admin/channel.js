@@ -53,17 +53,18 @@ module.exports = {
                     subcommand
                         .setName("max_suggestions")
                         .setDescription("Edit a channel's maximum number of suggestions per user.")
-                        .addChannelOption(option =>
-                            option
-                                .setName("channel")
-                                .setDescription("Channel. Must have qotd already enabled. Defaults to current channel.")
-                                .addChannelTypes(ChannelType.GuildText)
-                        )
                         .addIntegerOption(option =>
                             option
                                 .setName("max_suggestions")
                                 .setDescription("Maximum number of suggestions per user.")
                                 .setMaxValue(maxSuggestions)
+                                .setRequired(true)
+                        )
+                        .addChannelOption(option =>
+                            option
+                                .setName("channel")
+                                .setDescription("Channel. Must have qotd already enabled. Defaults to current channel.")
+                                .addChannelTypes(ChannelType.GuildText)
                         )
                 )
         ),
@@ -88,7 +89,7 @@ module.exports = {
             } else if(interaction.options.getSubcommandGroup() === "unassign") {
                 return;
             } else if(interaction.options.getSubcommandGroup() === "edit") {
-                return
+                return;
             }
         } catch(err) {
             console.log("[WARN]", err);
